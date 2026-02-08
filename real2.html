@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real Face Detector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+</head>
+<body class="flex items-center justify-center h-screen bg-gray-900 text-white">
+  <div class="p-6 bg-gray-800 rounded-xl shadow-lg text-center">
+    <h1 class="text-xl font-bold mb-4">Real Face Detector</h1>
+    <video id="video" autoplay muted playsinline class="rounded-xl border border-gray-700 w-80 h-60"></video>
+    <p id="status" class="mt-4 text-green-400 font-semibold">Loading...</p>
+  </div>
+
+
+   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<script>
+const video = document.getElementById("video");
+const statusEl = document.getElementById("status");
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+    video.srcObject = stream;
+  } catch (err) {
+    statusEl.textContent = "❌ Camera not accessible";
+    statusEl.className = "mt-4 text-red-400 font-bold";
+  }
+}
+
+async function init() {
+  // Load models
+  await faceapi.nets.tinyFaceDetector.loadFromUri("./models");
+  await faceapi.nets.faceLandmark68Net.loadFromUri("./models");
+
+  await startCamera();
+
+  video.addEventListener("play", () => {
+    const canvas = faceapi.createCanvasFromMedia(video);
+    document.body.appendChild(canvas);
+
+    const options = new faceapi.TinyFaceDetectorOptions({
+      inputSize: 416,
+      scoreThreshold: 0.3
+    });
+
+    let lastBlinkTime = Date.now();
+    let lastNose = null;
+    let movementScore = 0;
+
+    setInterval(async () => {
+      const result = await faceapi
+        .detectSingleFace(video, options)
+        .withFaceLandmarks();
+
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (result) {
+        const resized = faceapi.resizeResults(result, {
+          width: video.videoWidth,
+          height: video.videoHeight
+        });
+
+        // Draw face + landmarks
+        faceapi.draw.drawDetections(canvas, [resized]);
+        faceapi.draw.drawFaceLandmarks(canvas, [resized]);
+
+        const lm = resized.landmarks;
+        const leftEye = lm.getLeftEye();
+        const rightEye = lm.getRightEye();
+        const nose = lm.getNose()[3]; // nose tip
+
+        // Blink detection
+        const blink = isBlinking(leftEye) || isBlinking(rightEye);
+        if (blink) {
+          lastBlinkTime = Date.now();
+        }
+
+        // Nose movement (head movement detection)
+        if (lastNose) {
+          const dist = euclideanDistance(nose, lastNose);
+          if (dist > 2) {
+            movementScore += dist;
+          }
+        }
+        lastNose = nose;
+
+        // Check live-ness
+        const secondsSinceBlink = (Date.now() - lastBlinkTime) / 1000;
+
+        if (secondsSinceBlink > 8) {
+          statusEl.textContent = "⚠️ Spoof detected — no blink";
+          statusEl.className = "mt-4 text-red-400 font-bold";
+        } else if (movementScore < 10) {
+          statusEl.textContent = "⚠️ Spoof detected — no head movement";
+          statusEl.className = "mt-4 text-red-400 font-bold";
+        } else {
+          statusEl.textContent = "✅ Live face detected (blink + movement)";
+          statusEl.className = "mt-4 text-green-400 font-bold";
+        }
+
+      } else {
+        statusEl.textContent = "❌ No face found";
+        statusEl.className = "mt-4 text-red-400 font-bold";
+      }
+    }, 400);
+  });
+}
+
+// Helper: distance between two points
+function euclideanDistance(p1, p2) {
+  return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+}
+
+// Helper: Eye Aspect Ratio (blink detection)
+function isBlinking(eye) {
+  const vertical1 = euclideanDistance(eye[1], eye[5]);
+  const vertical2 = euclideanDistance(eye[2], eye[4]);
+  const horizontal = euclideanDistance(eye[0], eye[3]);
+
+  const EAR = (vertical1 + vertical2) / (2.0 * horizontal);
+  return EAR < 0.25; // threshold for blink
+}
+
+init();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
