@@ -10,14 +10,14 @@ This project demonstrates real-time face detection using **Face API.js** with:
 
 ## 📸 Project Screenshots
 
-### ✅ Face Detected with Landmarks
+### 👁️ Blink Detection
 
 ![Face Real](screenshots/facereal.jfif
 )
 
 ---
 
-### 👁️ Blink Detection
+### ✅ Face Detected with Landmarks
 
 ![Blink Detection](screenshots/facereal2.jfif)
 
