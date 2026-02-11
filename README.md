@@ -15,9 +15,9 @@ This repository contains a project for **real-time face detection and blink dete
 
 ## Files
 
-- `facereal.jpg` - Sample image with a visible face.  
-- `noface.jpg` - Sample image with no faces.  
-- `facereal2.jpg` - Another sample image with a face.  
+- `facereal.jfif` - Sample image with a visible face.  
+- `noface.jfif` - Sample image with no faces.  
+- `facereal2.jfif` - Another sample image with a face.  
 
 These images are used for testing and demonstration.
 
