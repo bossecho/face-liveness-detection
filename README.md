@@ -6,7 +6,7 @@ This repository contains a project for **real-time face detection and blink dete
 
 ## Features
 
-- Detect faces in images using OpenCV.
+- Detect faces in images using face-api.js.
 - Detect eye blinks in real-time.
 - Lightweight and easy to integrate into other projects.
 - Works with images and video input.
